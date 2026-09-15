@@ -9,7 +9,7 @@ El servidor debe estar instalado, tener el modelo descargado y estar iniciado.
 Desde el servidor, comprueba que está listo:
 
 ```bash
-curl http://127.0.0.1:8080/health
+curl http://127.0.0.1:8090/health
 ```
 
 Debe devolver HTTP 200 y `{"status":"ok"}`. Durante la carga inicial puede devolver HTTP 503.
@@ -17,13 +17,13 @@ Debe devolver HTTP 200 y `{"status":"ok"}`. Durante la carga inicial puede devol
 Si VS Code se ejecuta en el mismo equipo que el servidor, usa:
 
 ```text
-http://127.0.0.1:8080/v1
+http://127.0.0.1:8090/v1
 ```
 
 Si VS Code está en otro equipo, usa la IP del servidor o, preferiblemente, la IP privada de Tailscale/WireGuard:
 
 ```text
-http://IP_DEL_SERVIDOR:8080/v1
+http://IP_DEL_SERVIDOR:8090/v1
 ```
 
 La URL debe terminar en `/v1`.
@@ -73,7 +73,7 @@ models:
   - name: Qwen2.5 Coder 14B local
     provider: openai
     model: qwen2.5-coder-14b
-    apiBase: http://IP_DEL_SERVIDOR:8080/v1
+    apiBase: http://IP_DEL_SERVIDOR:8090/v1
     apiKey: ${{ secrets.QWEN_API_KEY }}
     contextLength: 8192
     useResponsesApi: false
@@ -103,16 +103,16 @@ Este modelo está configurado inicialmente para `chat`, `edit` y `apply`. En una
 Prueba primero desde el equipo donde corre VS Code:
 
 ```bash
-curl http://IP_DEL_SERVIDOR:8080/v1/models \
+curl http://IP_DEL_SERVIDOR:8090/v1/models \
   -H "Authorization: Bearer PEGA_AQUI_EL_VALOR_DE_LLAMA_API_KEY"
 ```
 
 - `401`: la clave de Continue no coincide con `LLAMA_API_KEY`.
 - `404`: revisa que `apiBase` termine en `/v1` y que el modelo sea `qwen2.5-coder-14b`.
-- `Connection refused` o timeout: revisa que el servicio esté iniciado, el puerto 8080, UFW y la VPN/ruta de red.
+- `Connection refused` o timeout: revisa que el servicio esté iniciado, el puerto 8090, UFW y la VPN/ruta de red.
 - `503` en `/health`: el modelo aún está cargando o el servicio falló. Consulta `sudo journalctl -u qwen-coder -n 80 --no-pager`.
 
-No abras el puerto 8080 a Internet sin limitar el firewall. Tailscale o WireGuard es la opción recomendada para acceder desde otro equipo.
+No abras el puerto 8090 a Internet sin limitar el firewall. Tailscale o WireGuard es la opción recomendada para acceder desde otro equipo.
 
 ## Rutas de configuración de Continue
 

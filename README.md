@@ -2,7 +2,7 @@
 
 Servidor pequeño y autocontenido para ejecutar `Qwen2.5-Coder-14B-Instruct-Uncensored-GGUF` con `llama.cpp` en Ubuntu 22.04/24.04, CPU-only, y exponer una API HTTP compatible con OpenAI.
 
-No instala Docker ni Ollama. Está pensado para un host x86_64 con 12 cores y 48 GiB de RAM, con una única generación pesada a la vez (`parallel=1`).
+No instala Docker ni Ollama. Este repositorio es únicamente el laboratorio del modelo y su API; no administra las aplicaciones externas del servidor. Está pensado para un host x86_64 con 12 cores y 48 GiB de RAM, con una única generación pesada a la vez (`parallel=1`).
 
 ## 1. Requisitos
 
@@ -77,7 +77,7 @@ Valores iniciales CPU:
 
 ```text
 LLAMA_HOST=0.0.0.0
-LLAMA_PORT=8080
+LLAMA_PORT=8090
 LLAMA_THREADS=12
 LLAMA_THREADS_BATCH=12
 LLAMA_CONTEXT=8192
@@ -158,14 +158,14 @@ sudo systemctl status qwen-coder --no-pager
 Health check local:
 
 ```bash
-curl http://127.0.0.1:8080/health
+curl http://127.0.0.1:8090/health
 ```
 
 Una respuesta `503` durante la carga inicial es normal. Cuando está listo devuelve HTTP 200 y `{"status":"ok"}`. El endpoint de health es público según la interfaz de llama.cpp; las rutas de la API se protegen con la API key.
 
 ## 7. Firewall
 
-No uses `ufw allow 8080` como regla general: expondría el endpoint a cualquier origen permitido por el firewall.
+No uses `ufw allow 8090` como regla general: expondría el endpoint a cualquier origen permitido por el firewall.
 
 ### Opción A: solo la IP pública del PC
 
@@ -174,37 +174,37 @@ Sustituye `MI_IP_PUBLICA` por una IP concreta y conserva SSH antes de activar UF
 ```bash
 sudo ufw allow OpenSSH
 sudo ufw default deny incoming
-sudo ufw allow from MI_IP_PUBLICA to any port 8080 proto tcp
+sudo ufw allow from MI_IP_PUBLICA to any port 8090 proto tcp
 sudo ufw enable
 sudo ufw status verbose
 ```
 
 ### Opción B: Tailscale o WireGuard — recomendada
 
-No abras 8080 a Internet. Permite únicamente la interfaz privada de la VPN:
+No abras 8090 a Internet. Permite únicamente la interfaz privada de la VPN:
 
 ```bash
 sudo ufw allow OpenSSH
 sudo ufw default deny incoming
-sudo ufw allow in on tailscale0 to any port 8080 proto tcp
+sudo ufw allow in on tailscale0 to any port 8090 proto tcp
 sudo ufw enable
 sudo ufw status verbose
 ```
 
-Para WireGuard, cambia `tailscale0` por `wg0`. Consume el servicio usando la IP privada de Tailscale/WireGuard, por ejemplo `http://100.x.y.z:8080/v1`.
+Para WireGuard, cambia `tailscale0` por `wg0`. Consume el servicio usando la IP privada de Tailscale/WireGuard, por ejemplo `http://100.x.y.z:8090/v1`.
 
 ## 8. Conexión remota
 
 Comprueba desde el servidor:
 
 ```bash
-curl http://127.0.0.1:8080/health
+curl http://127.0.0.1:8090/health
 ```
 
 Desde el PC remoto, con firewall y ruta configurados:
 
 ```bash
-curl http://SERVER_IP:8080/v1/models \
+curl http://SERVER_IP:8090/v1/models \
   -H "Authorization: Bearer API_KEY"
 ```
 
@@ -215,13 +215,15 @@ Si usas VPN, reemplaza `SERVER_IP` por la IP de Tailscale/WireGuard. No comparta
 La API base es:
 
 ```text
-http://SERVER_IP:8080/v1
+http://SERVER_IP:8090/v1
 ```
+
+En esta instalación se usa el puerto `8090` porque el `8080` ya estaba ocupado por otro servicio del servidor.
 
 Ejemplo de chat completion:
 
 ```bash
-SERVER_URL="http://SERVER_IP:8080/v1"
+SERVER_URL="http://SERVER_IP:8090/v1"
 API_KEY="API_KEY"
 
 curl -sS "$SERVER_URL/chat/completions" \
@@ -255,7 +257,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade openai
 
-export QWEN_BASE_URL="http://SERVER_IP:8080/v1"
+export QWEN_BASE_URL="http://SERVER_IP:8090/v1"
 export QWEN_API_KEY="API_KEY"
 export QWEN_MODEL="qwen2.5-coder-14b"
 python examples/client.py
@@ -269,7 +271,7 @@ Instala el SDK oficial y ejecuta el ejemplo incluido:
 
 ```bash
 npm install openai
-export QWEN_BASE_URL="http://SERVER_IP:8080/v1"
+export QWEN_BASE_URL="http://SERVER_IP:8090/v1"
 export QWEN_API_KEY="API_KEY"
 node examples/client.mjs
 ```
@@ -280,7 +282,7 @@ El archivo es [examples/client.mjs](examples/client.mjs).
 
 Configura en el cliente que uses:
 
-- Base URL: `http://SERVER_IP:8080/v1`.
+- Base URL: `http://SERVER_IP:8090/v1`.
 - API key: el valor de `LLAMA_API_KEY`.
 - Model: `qwen2.5-coder-14b`.
 - Proveedor/protocolo: OpenAI-compatible.
@@ -327,9 +329,9 @@ El orden recomendado es reducir `LLAMA_CONTEXT` a `4096`, probar `Q4_K_M`, y man
 Comprueba escucha, firewall y ruta:
 
 ```bash
-sudo ss -ltnp | grep ':8080'
+sudo ss -ltnp | grep ':8090'
 sudo ufw status verbose
-curl -v http://127.0.0.1:8080/health
+curl -v http://127.0.0.1:8090/health
 ```
 
 ### Ver el proceso manualmente
@@ -350,7 +352,7 @@ sudo ./scripts/benchmark.sh
 Para probar un cliente remoto:
 
 ```bash
-QWEN_BASE_URL="http://SERVER_IP:8080/v1" \
+QWEN_BASE_URL="http://SERVER_IP:8090/v1" \
 QWEN_API_KEY="API_KEY" \
 sudo -E ./scripts/benchmark.sh
 ```
@@ -447,13 +449,13 @@ sudo nano /opt/qwen-coder/config/qwen-coder.env
 sudo ./scripts/install-service.sh
 sudo systemctl enable --now qwen-coder
 
-curl http://127.0.0.1:8080/health
+curl http://127.0.0.1:8090/health
 ```
 
 Primera llamada OpenAI-compatible desde el servidor o desde un PC autorizado:
 
 ```bash
-curl http://SERVER_IP:8080/v1/chat/completions \
+curl http://SERVER_IP:8090/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer API_KEY" \
   -d '{
