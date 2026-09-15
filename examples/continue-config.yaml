@@ -1,0 +1,19 @@
+name: Qwen Coder local
+version: 0.0.1
+schema: v1
+
+models:
+  - name: Qwen2.5 Coder 14B local
+    provider: openai
+    model: qwen2.5-coder-14b
+    apiBase: http://IP_DEL_SERVIDOR:8080/v1
+    apiKey: ${{ secrets.QWEN_API_KEY }}
+    contextLength: 8192
+    useResponsesApi: false
+    roles:
+      - chat
+      - edit
+      - apply
+    defaultCompletionOptions:
+      temperature: 0.2
+      maxTokens: 1024

@@ -1,0 +1,38 @@
+[Unit]
+Description=Qwen2.5 Coder 14B llama.cpp OpenAI-compatible server
+Documentation=https://github.com/ggml-org/llama.cpp/tree/master/tools/server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=qwenllm
+Group=qwenllm
+WorkingDirectory=/opt/qwen-coder
+EnvironmentFile=-/opt/qwen-coder/config/qwen-coder.env
+ExecStart=/opt/qwen-coder/scripts/start.sh --direct
+Restart=always
+RestartSec=5
+
+# Keep the model service away from privileged operations while allowing its log directory.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=full
+ReadWritePaths=/opt/qwen-coder/logs
+UMask=0077
+
+# Suitable for a 48 GiB CPU-only host; leave headroom for the OS and services.
+MemoryAccounting=true
+MemoryHigh=40G
+MemoryMax=44G
+LimitNOFILE=65536
+TasksMax=infinity
+OOMScoreAdjust=-200
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=qwen-coder
+
+[Install]
+WantedBy=multi-user.target
