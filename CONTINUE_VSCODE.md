@@ -1,4 +1,4 @@
-# Usar qwen-coder-server desde VS Code con Continue
+# Usar qwen-coder-local desde VS Code con Continue
 
 Esta guía conecta la extensión [Continue](https://www.continue.dev/) de VS Code con este servidor local OpenAI-compatible.
 

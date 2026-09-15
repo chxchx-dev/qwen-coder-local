@@ -1,8 +1,18 @@
-# qwen-coder-server
+# qwen-coder-local
 
-Servidor pequeño y autocontenido para ejecutar `Qwen2.5-Coder-14B-Instruct-Uncensored-GGUF` con `llama.cpp` en Ubuntu 22.04/24.04, CPU-only, y exponer una API HTTP compatible con OpenAI.
+Base local para ejecutar `Qwen2.5-Coder-14B-Instruct-Uncensored-GGUF` con `llama.cpp` en Ubuntu 22.04/24.04, CPU-only, exponer una API HTTP compatible con OpenAI y construir varios MVPs sobre ella.
 
-No instala Docker ni Ollama. Está pensado para un host x86_64 con 12 cores y 48 GiB de RAM, con una única generación pesada a la vez (`parallel=1`).
+No instala Docker ni Ollama. El servidor es la infraestructura compartida; los MVPs viven en [mvps/](mvps/) y consumen la API mediante `/v1/chat/completions`. Está pensado para un host x86_64 con 12 cores y 48 GiB de RAM, con una única generación pesada a la vez (`parallel=1`).
+
+## Enfoque del repositorio
+
+El proyecto se divide en tres capas:
+
+- `scripts/` y `systemd/`: instalación y operación del servidor local.
+- API OpenAI-compatible: interfaz común para Continue, scripts y MVPs.
+- `mvps/`: aplicaciones y pruebas de concepto que construiremos encima de la API.
+
+Antes de probar un MVP, valida la infraestructura con [API_TESTING.md](API_TESTING.md).
 
 ## 1. Requisitos
 
@@ -289,7 +299,17 @@ En conexiones remotas, usa preferentemente la IP de Tailscale/WireGuard o una re
 
 Para conectar VS Code con Continue paso a paso, consulta [CONTINUE_VSCODE.md](CONTINUE_VSCODE.md). El ejemplo de configuración YAML está en [examples/continue-config.yaml](examples/continue-config.yaml). La API key se configura localmente mediante el archivo `.env` de Continue y no se guarda en este repositorio.
 
-## 13. Troubleshooting
+## 13. Pruebas de API y MVPs
+
+Las URLs y comandos `curl` para comprobar health, modelos, chat, streaming y autenticación están en [API_TESTING.md](API_TESTING.md). La prueba rápida desde el servidor es:
+
+```bash
+curl -i http://127.0.0.1:8080/health
+```
+
+Para pruebas de rendimiento usa [scripts/benchmark.sh](scripts/benchmark.sh). Para organizar aplicaciones nuevas, consulta [mvps/README.md](mvps/README.md).
+
+## 14. Troubleshooting
 
 ### `401 Invalid API Key`
 
@@ -339,7 +359,7 @@ htop
 journalctl -u qwen-coder -f
 ```
 
-## 14. Benchmarking
+## 15. Benchmarking
 
 El benchmark realiza cuatro pruebas: prompt corto, 256 tokens, 1024 tokens y prompt de código. Muestra tiempo total, tokens generados, tokens/segundo aproximados, RAM del sistema, RSS de `llama-server` y carga CPU antes/después.
 
@@ -364,7 +384,7 @@ journalctl -u qwen-coder -f
 
 El valor de tokens/segundo depende de la CPU, afinidad, temperatura, versión de llama.cpp y prompt. OpenBLAS suele ayudar especialmente al procesamiento del prompt; no garantiza una mejora equivalente en la generación token a token.
 
-## 15. Actualización de llama.cpp
+## 16. Actualización de llama.cpp
 
 Haz la actualización de forma controlada y conserva el servicio parado durante la recompilación:
 
@@ -410,15 +430,18 @@ La prioridad inicial es estabilidad, calidad, RAM razonable, latencia y finalmen
 ## Árbol del proyecto
 
 ```text
-qwen-coder-server/
+qwen-coder-local/
 ├── .env.example
 ├── .gitignore
+├── API_TESTING.md
 ├── CONTINUE_VSCODE.md
 ├── README.md
 ├── examples/
 │   ├── client.mjs
 │   ├── continue-config.yaml
 │   └── client.py
+├── mvps/
+│   └── README.md
 ├── scripts/
 │   ├── benchmark.sh
 │   ├── common.sh
